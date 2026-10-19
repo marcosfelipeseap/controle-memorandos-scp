@@ -1,0 +1,75 @@
+<%- include('partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Gerenciamento de Usuários</h2>
+    <p class="text-muted mb-0">Aprove cadastros pendentes e defina os papéis de Administrador ou Servidor.</p>
+  </div>
+</div>
+
+<% if (sucesso) { %>
+  <div class="alert alert-success"><%= sucesso %></div>
+<% } %>
+<% if (erro) { %>
+  <div class="alert alert-danger"><%= erro %></div>
+<% } %>
+
+<div class="card shadow-sm overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-custom mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Usuário (Username)</th>
+          <th class="text-center">Status de Acesso</th>
+          <th class="text-center">Cargo / Papel</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% usuarios.forEach(u => { %>
+          <tr>
+            <td class="fw-bold text-dark"><%= u.nome %></td>
+            <td><code>@<%= u.username %></code></td>
+            <td class="text-center">
+              <% if (u.is_approved) { %>
+                <span class="badge bg-success">APROVADO</span>
+              <% } else { %>
+                <span class="badge bg-warning text-dark">PENDENTE</span>
+              <% } %>
+            </td>
+            <td class="text-center">
+              <span class="badge <%= u.role === 'admin' ? 'bg-primary' : 'bg-secondary' %> text-uppercase">
+                <%= u.role %>
+              </span>
+            </td>
+            <td class="text-end">
+              <!-- Aprovar / Bloquear -->
+              <form action="/admin/usuarios/<%= u.id %>/status" method="POST" class="d-inline">
+                <input type="hidden" name="is_approved" value="<%= !u.is_approved %>">
+                <button type="submit" class="btn btn-sm <%= u.is_approved ? 'btn-outline-warning' : 'btn-outline-success' %>" title="<%= u.is_approved ? 'Bloquear Acesso' : 'Aprovar Acesso' %>">
+                  <i class="bi <%= u.is_approved ? 'bi-lock' : 'bi-unlock' %>"></i>
+                </button>
+              </form>
+
+              <!-- Alternar Cargo -->
+              <form action="/admin/usuarios/<%= u.id %>/role" method="POST" class="d-inline">
+                <input type="hidden" name="role" value="<%= u.role === 'admin' ? 'servidor' : 'admin' %>">
+                <button type="submit" class="btn btn-sm btn-outline-dark" title="Tornar <%= u.role === 'admin' ? 'Servidor' : 'Admin' %>">
+                  <i class="bi bi-shield-shaded"></i>
+                </button>
+              </form>
+
+              <!-- Excluir -->
+              <form action="/admin/usuarios/<%= u.id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="return confirm('Deseja excluir este usuário?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

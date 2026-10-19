@@ -1,0 +1,579 @@
+<%- include('partials/header') %>
+
+<!-- Cabeçalho da Página -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-box-arrow-in-down text-primary me-2"></i>Processos - Recebidos</h2>
+    <p class="text-muted mb-0">Gerenciamento e controle de memorandos, ofícios e processos recebidos por oficina.</p>
+  </div>
+  <div>
+    <button class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNovoRecebido" onclick="prepararNovoRecebido()">
+      <i class="bi bi-plus-lg me-1"></i> Novo Processo Recebido
+    </button>
+  </div>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row g-3 mb-4">
+  <div class="col-md">
+    <div class="card bg-white p-3 border-start border-primary border-4">
+      <span class="text-muted small text-uppercase fw-bold">TOTAL RECEBIDOS</span>
+      <h4 class="fw-bold mt-1 mb-0 text-dark"><%= resumo.total %></h4>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="card bg-white p-3 border-start border-warning border-4">
+      <span class="text-muted small text-uppercase fw-bold">PENDENTE</span>
+      <h4 class="fw-bold mt-1 mb-0 text-warning"><%= resumo.pendentes %></h4>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="card bg-white p-3 border-start border-info border-4">
+      <span class="text-muted small text-uppercase fw-bold">EM ANDAMENTO</span>
+      <h4 class="fw-bold mt-1 mb-0 text-info"><%= resumo.emAndamento %></h4>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="card bg-white p-3 border-start border-success border-4">
+      <span class="text-muted small text-uppercase fw-bold">CONCLUÍDO</span>
+      <h4 class="fw-bold mt-1 mb-0 text-success"><%= resumo.concluidos %></h4>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="card bg-white p-3 border-start border-danger border-4">
+      <span class="text-muted small text-uppercase fw-bold">CANCELADO / ARQUIVADO</span>
+      <h4 class="fw-bold mt-1 mb-0 text-danger"><%= resumo.cancelados %></h4>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros Múltiplos Instantâneos e Ordenação -->
+<div class="card p-3 mb-4">
+  <div class="row g-3 align-items-end">
+    <!-- Pesquisa Geral -->
+    <div class="col-md-3">
+      <label class="form-label small fw-bold">Pesquisa Geral Instantânea</label>
+      <div class="input-group">
+        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+        <input type="text" id="filtroBuscaRec" class="form-control" placeholder="Processo SEI, Assunto..." oninput="dispararFiltroRecebidos()">
+      </div>
+    </div>
+
+    <!-- Status (Ordenados Alfabeticamente) -->
+    <div class="col-md-3">
+      <label class="form-label small fw-bold">Status (Múltipla Seleção)</label>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center bg-white" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="btnDropdownStatus">
+          <span>Selecionar Status</span> <i class="bi bi-chevron-down small"></i>
+        </button>
+        <div class="dropdown-menu p-3 w-100 shadow" style="max-height: 250px; overflow-y: auto;">
+          <div class="form-check mb-2 pb-2 border-bottom">
+            <input class="form-check-input" type="checkbox" id="todosStatus" onchange="toggleTodosStatus(this)" checked>
+            <label class="form-check-label fw-bold" for="todosStatus">Todos os Status</label>
+          </div>
+          <% [...statusValidos].sort((a, b) => a.localeCompare(b, 'pt')).forEach(st => { %>
+            <div class="form-check mb-2">
+              <input class="form-check-input check-status" type="checkbox" value="<%= st %>" id="st_<%= st.replace(/[^a-zA-Z0-9]/g, '_') %>" onchange="filtrarTabelaRecebidos()" checked>
+              <label class="form-check-label" for="st_<%= st.replace(/[^a-zA-Z0-9]/g, '_') %>"><%= st %></label>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Oficinas (Ordenadas Alfabeticamente) -->
+    <div class="col-md-3">
+      <label class="form-label small fw-bold">Oficinas (Múltipla Seleção)</label>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center bg-white" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="btnDropdownOficina">
+          <span>Selecionar Oficinas</span> <i class="bi bi-chevron-down small"></i>
+        </button>
+        <div class="dropdown-menu p-3 w-100 shadow" style="max-height: 250px; overflow-y: auto;">
+          <div class="form-check mb-2 pb-2 border-bottom">
+            <input class="form-check-input" type="checkbox" id="todasOficinas" onchange="toggleTodasOficinas(this)" checked>
+            <label class="form-check-label fw-bold" for="todasOficinas">Todas as Oficinas</label>
+          </div>
+          <% [...oficinasValidas].sort((a, b) => a.localeCompare(b, 'pt')).forEach(ofc => { %>
+            <div class="form-check mb-2">
+              <input class="form-check-input check-oficina" type="checkbox" value="<%= ofc %>" id="ofc_<%= ofc.replace(/[^a-zA-Z0-9]/g, '_') %>" onchange="filtrarTabelaRecebidos()" checked>
+              <label class="form-check-label" for="ofc_<%= ofc.replace(/[^a-zA-Z0-9]/g, '_') %>"><%= ofc %></label>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ordenação -->
+    <div class="col-md-2">
+      <label class="form-label small fw-bold">Ordenar por</label>
+      <select id="filtroOrdenacaoRec" class="form-select" onchange="dispararFiltroRecebidos()">
+        <option value="recente">Mais recente (Data)</option>
+        <option value="antigo">Mais antigo (Data)</option>
+        <option value="sei_asc">Nº Processo SEI (Crescente)</option>
+        <option value="sei_desc">Nº Processo SEI (Decrescente)</option>
+      </select>
+    </div>
+
+    <!-- Botão Limpar -->
+    <div class="col-md-1 d-grid">
+      <button type="button" class="btn btn-outline-secondary" onclick="limparFiltrosRecebidos()" title="Limpar Filtros">
+        <i class="bi bi-arrow-counterclockwise"></i> Limpar
+      </button>
+    </div>
+  </div>
+  <div class="mt-2 small text-muted">
+    Exibindo <strong id="contadorVisiveisRec"><%= memorandos.length %></strong> de <strong><%= memorandos.length %></strong> processos recebidos.
+  </div>
+</div>
+
+<!-- Tabela de Dados -->
+<div class="card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-custom mb-0">
+      <colgroup>
+        <col style="width: 15%;">
+        <col style="width: 14%;">
+        <col style="width: 28%;">
+        <col style="width: 10%;">
+        <col style="width: 18%;">
+        <col style="width: 8%;">
+        <col style="width: 7%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Processo SEI e Recebimento</th>
+          <th>Tipo e Remetente</th>
+          <th>Assunto e Observações</th>
+          <th class="text-center">Oficina</th>
+          <th>Ação e Último Documento</th>
+          <th class="text-center">Status</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="corpoTabelaRecebidos">
+        <% if (memorandos.length === 0) { %>
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+              Nenhum processo recebido cadastrado.
+            </td>
+          </tr>
+        <% } else { %>
+          <% memorandos.forEach(item => { 
+               const stUpper = (item.status || 'PENDENTE').toUpperCase();
+          %>
+            <tr class="linha-registro-rec"
+                data-sei="<%= item.numero_processo_sei || '' %>"
+                data-data="<%= item.data_recebimento || '' %>"
+                data-status="<%= stUpper %>"
+                data-oficina="<%= (item.oficina || '').toUpperCase() %>">
+              <td>
+                <span class="sei-badge"><%= item.numero_processo_sei %></span>
+                <div class="info-linha">
+                  <i class="bi bi-calendar-check text-primary me-1"></i>Recebido em:<br>
+                  <strong><%= item.data_recebimento ? new Date(item.data_recebimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado' %></strong>
+                </div>
+              </td>
+              <td>
+                <div class="fw-bold text-dark mb-1"><%= item.tipo || 'Não informado' %></div>
+                <div class="info-linha">
+                  <span class="text-muted">Remetente:</span><br>
+                  <strong><%= item.remetente || 'Não informado' %></strong>
+                </div>
+              </td>
+              <td>
+                <div class="texto-completo">
+                  <%= item.assunto || 'Sem assunto cadastrado' %>
+                </div>
+                <% if (item.observacoes) { %>
+                  <div class="obs-box">
+                    <strong><i class="bi bi-chat-left-text me-1"></i>Observações:</strong> <%= item.observacoes %>
+                  </div>
+                <% } %>
+              </td>
+              <td class="text-center">
+                <% if (item.oficina) { %>
+                  <span class="oficina-badge"><%= item.oficina %></span>
+                <% } else { %>
+                  <span class="text-muted small">Não informada</span>
+                <% } %>
+              </td>
+              <td>
+                <div class="info-bloco">
+                  <div class="info-linha">
+                    <span class="text-muted">Ação:</span> 
+                    <strong><%= item.acao || 'Nenhuma ação registrada' %></strong>
+                  </div>
+                  <% if (item.data) { %>
+                    <div class="info-linha">
+                      <span class="text-muted">Data da Ação:</span> 
+                      <strong><%= new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR') %></strong>
+                    </div>
+                  <% } %>
+                  <% if (item.ultimo_documento_recebido) { %>
+                    <div class="info-linha mt-1">
+                      <span class="text-muted">Último Documento Recebido:</span><br>
+                      <strong class="text-primary"><%= item.ultimo_documento_recebido %></strong>
+                    </div>
+                  <% } %>
+                </div>
+              </td>
+              <td class="text-center">
+                <% 
+                  let badgeClass = 'bg-secondary';
+                  if (stUpper === 'CONCLUÍDO') badgeClass = 'bg-success';
+                  else if (stUpper === 'EM ANDAMENTO') badgeClass = 'bg-info text-dark';
+                  else if (stUpper === 'PENDENTE') badgeClass = 'bg-warning text-dark';
+                  else if (stUpper === 'CANCELADO/ARQUIVADO') badgeClass = 'bg-danger';
+                %>
+                <span class="badge badge-status <%= badgeClass %>"><%= stUpper %></span>
+              </td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-light border text-secondary" onclick="verDetalhesRecebido(<%= JSON.stringify(item) %>)" title="Visualizar Ficha Completa">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="editarRecebido(<%= JSON.stringify(item) %>)" title="Editar Processo">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <form action="/recebidos/<%= item.id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este processo recebido?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir Processo"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <tr id="linhaSemResultadosRec" class="d-none">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-2 d-block mb-2"></i>
+              Nenhum processo recebido corresponde aos filtros selecionados.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Visualizar Detalhes Completos -->
+<div class="modal fade" id="modalDetalhesRecebido" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-text text-primary me-2"></i>Ficha Completa do Processo Recebido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-3">
+        <div class="col-md-4">
+          <div class="detalhe-label">Número do Processo SEI</div>
+          <div class="detalhe-valor fw-bold text-primary" id="det_rec_sei"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Oficina</div>
+          <div class="detalhe-valor fw-semibold" id="det_rec_oficina"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Status</div>
+          <div class="detalhe-valor fw-bold" id="det_rec_status"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Data de Recebimento</div>
+          <div class="detalhe-valor" id="det_rec_data_rec"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Tipo de Documento</div>
+          <div class="detalhe-valor" id="det_rec_tipo"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Remetente</div>
+          <div class="detalhe-valor" id="det_rec_remetente"></div>
+        </div>
+        <div class="col-md-12">
+          <div class="detalhe-label">Assunto</div>
+          <div class="detalhe-valor" id="det_rec_assunto"></div>
+        </div>
+        <div class="col-md-8">
+          <div class="detalhe-label">Ação Realizada / Andamento</div>
+          <div class="detalhe-valor" id="det_rec_acao"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Data da Ação</div>
+          <div class="detalhe-valor" id="det_rec_data_acao"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Último Documento Recebido</div>
+          <div class="detalhe-valor" id="det_rec_ult_doc"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Observações</div>
+          <div class="detalhe-valor" id="det_rec_obs"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cadastro / Edição -->
+<div class="modal fade" id="modalNovoRecebido" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="formRecebido" action="/recebidos" method="POST">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="modalRecebidoTitulo">Cadastrar Novo Processo Recebido</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-3">
+          <input type="hidden" name="_method" id="formRecebidoMethod" value="POST">
+          
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Número do Processo SEI *</label>
+            <input type="text" class="form-control" name="numero_processo_sei" id="rec_numero_processo_sei" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Data de Recebimento</label>
+            <input type="date" class="form-control" name="data_recebimento" id="rec_data_recebimento">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Tipo de Documento</label>
+            <input type="text" class="form-control" name="tipo" id="rec_tipo" placeholder="Ex: MEMORANDO, DESPACHO...">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Remetente</label>
+            <input type="text" class="form-control" name="remetente" id="rec_remetente">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label fw-bold">Assunto</label>
+            <textarea class="form-control" name="assunto" id="rec_assunto" rows="3"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Oficina</label>
+            <select class="form-select" name="oficina" id="rec_oficina">
+              <option value="">SELECIONE A OFICINA...</option>
+              <% [...oficinasValidas].sort((a, b) => a.localeCompare(b, 'pt')).forEach(ofc => { %>
+                <option value="<%= ofc %>"><%= ofc %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Status</label>
+            <select class="form-select" name="status" id="rec_status">
+              <% [...statusValidos].sort((a, b) => a.localeCompare(b, 'pt')).forEach(st => { %>
+                <option value="<%= st %>"><%= st %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-bold">Ação</label>
+            <input type="text" class="form-control" name="acao" id="rec_acao">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Data da Ação</label>
+            <input type="date" class="form-control" name="data" id="rec_data">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Último Documento Recebido</label>
+            <input type="text" class="form-control" name="ultimo_documento_recebido" id="rec_ultimo_documento_recebido">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Observações</label>
+            <textarea class="form-control" name="observacoes" id="rec_observacoes" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Processo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function normalizarTexto(str) {
+    return (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function normalizarCodigo(str) {
+    return normalizarTexto(str).replace(/[^a-z0-9]/g, '');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#corpoTabelaRecebidos .linha-registro-rec').forEach(linha => {
+      const sei = linha.getAttribute('data-sei') || '';
+      const textoCompleto = normalizarTexto(linha.innerText);
+      const codigoCompleto = normalizarCodigo(sei + ' ' + linha.innerText);
+      linha.setAttribute('search-text', textoCompleto);
+      linha.setAttribute('search-code', codigoCompleto);
+    });
+    filtrarTabelaRecebidos();
+  });
+
+  let timeoutFiltroRec;
+  function dispararFiltroRecebidos() {
+    clearTimeout(timeoutFiltroRec);
+    timeoutFiltroRec = setTimeout(filtrarTabelaRecebidos, 100);
+  }
+
+  function toggleTodosStatus(master) {
+    const checks = document.querySelectorAll('.check-status');
+    checks.forEach(chk => chk.checked = master.checked);
+    filtrarTabelaRecebidos();
+  }
+
+  function toggleTodasOficinas(master) {
+    const checks = document.querySelectorAll('.check-oficina');
+    checks.forEach(chk => chk.checked = master.checked);
+    filtrarTabelaRecebidos();
+  }
+
+  function filtrarTabelaRecebidos() {
+    const termoBusca = document.getElementById('filtroBuscaRec').value.trim();
+    const ordenacao = document.getElementById('filtroOrdenacaoRec').value;
+    const termoTexto = normalizarTexto(termoBusca);
+    const termoCodigo = normalizarCodigo(termoBusca);
+
+    const statusSelecionados = Array.from(document.querySelectorAll('.check-status:checked')).map(chk => chk.value);
+    const todasStatusCheckbox = document.getElementById('todosStatus');
+    if (statusSelecionados.length > 0 && statusSelecionados.length < document.querySelectorAll('.check-status').length) {
+      todasStatusCheckbox.indeterminate = true;
+    } else {
+      todasStatusCheckbox.indeterminate = false;
+      todasStatusCheckbox.checked = statusSelecionados.length > 0;
+    }
+
+    const oficinasSelecionadas = Array.from(document.querySelectorAll('.check-oficina:checked')).map(chk => chk.value);
+    const todasOficinasCheckbox = document.getElementById('todasOficinas');
+    if (oficinasSelecionadas.length > 0 && oficinasSelecionadas.length < document.querySelectorAll('.check-oficina').length) {
+      todasOficinasCheckbox.indeterminate = true;
+    } else {
+      todasOficinasCheckbox.indeterminate = false;
+      todasOficinasCheckbox.checked = oficinasSelecionadas.length > 0;
+    }
+
+    const tbody = document.getElementById('corpoTabelaRecebidos');
+    const linhas = Array.from(tbody.querySelectorAll('.linha-registro-rec'));
+    let visiveis = 0;
+
+    linhas.forEach(linha => {
+      const searchTxt = linha.getAttribute('search-text') || '';
+      const searchCod = linha.getAttribute('search-code') || '';
+      const statusLinha = linha.getAttribute('data-status') || '';
+      const oficinaLinha = linha.getAttribute('data-oficina') || '';
+
+      const bateBusca = !termoBusca || 
+                        searchTxt.includes(termoTexto) || 
+                        (termoCodigo.length > 0 && searchCod.includes(termoCodigo));
+
+      const bateStatus = statusSelecionados.includes(statusLinha);
+      const bateOficina = oficinasSelecionadas.includes(oficinaLinha) || (!oficinaLinha && oficinasSelecionadas.includes(''));
+
+      if (bateBusca && bateStatus && bateOficina) {
+        linha.style.display = '';
+        visiveis++;
+      } else {
+        linha.style.display = 'none';
+      }
+    });
+
+    linhas.sort((a, b) => {
+      const dataA = a.getAttribute('data-data') || '';
+      const dataB = b.getAttribute('data-data') || '';
+      const seiA = a.getAttribute('data-sei') || '';
+      const seiB = b.getAttribute('data-sei') || '';
+
+      const temDataA = dataA.trim() !== '';
+      const temDataB = dataB.trim() !== '';
+
+      if (ordenacao === 'recente') {
+        if (!temDataA && temDataB) return 1;
+        if (temDataA && !temDataB) return -1;
+        return dataB.localeCompare(dataA);
+      } else if (ordenacao === 'antigo') {
+        if (!temDataA && temDataB) return 1;
+        if (temDataA && !temDataB) return -1;
+        return dataA.localeCompare(dataB);
+      } else if (ordenacao === 'sei_asc') {
+        return seiA.localeCompare(seiB, 'pt', { numeric: true });
+      } else if (ordenacao === 'sei_desc') {
+        return seiB.localeCompare(seiA, 'pt', { numeric: true });
+      }
+      return 0;
+    });
+
+    linhas.forEach(linha => tbody.appendChild(linha));
+
+    const contador = document.getElementById('contadorVisiveisRec');
+    if (contador) contador.innerText = visiveis;
+
+    const msgVazio = document.getElementById('linhaSemResultadosRec');
+    if (msgVazio) {
+      msgVazio.classList.toggle('d-none', visiveis > 0);
+    }
+  }
+
+  function limparFiltrosRecebidos() {
+    document.getElementById('filtroBuscaRec').value = '';
+    document.getElementById('todosStatus').checked = true;
+    document.querySelectorAll('.check-status').forEach(chk => chk.checked = true);
+    document.getElementById('todasOficinas').checked = true;
+    document.querySelectorAll('.check-oficina').forEach(chk => chk.checked = true);
+    document.getElementById('filtroOrdenacaoRec').value = 'recente';
+    filtrarTabelaRecebidos();
+  }
+
+  function formatarDataBR(d) {
+    return d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado';
+  }
+
+  function verDetalhesRecebido(item) {
+    document.getElementById('det_rec_sei').innerText = item.numero_processo_sei || '-';
+    document.getElementById('det_rec_oficina').innerText = item.oficina || '-';
+    document.getElementById('det_rec_status').innerText = (item.status || 'PENDENTE').toUpperCase();
+    document.getElementById('det_rec_data_rec').innerText = formatarDataBR(item.data_recebimento);
+    document.getElementById('det_rec_tipo').innerText = item.tipo || '-';
+    document.getElementById('det_rec_remetente').innerText = item.remetente || '-';
+    document.getElementById('det_rec_assunto').innerText = item.assunto || '-';
+    document.getElementById('det_rec_acao').innerText = item.acao || '-';
+    document.getElementById('det_rec_data_acao').innerText = formatarDataBR(item.data);
+    document.getElementById('det_rec_ult_doc').innerText = item.ultimo_documento_recebido || '-';
+    document.getElementById('det_rec_obs').innerText = item.observacoes || '-';
+
+    new bootstrap.Modal(document.getElementById('modalDetalhesRecebido')).show();
+  }
+
+  function prepararNovoRecebido() {
+    document.getElementById('modalRecebidoTitulo').innerText = 'Cadastrar Novo Processo Recebido';
+    document.getElementById('formRecebido').action = '/recebidos';
+    document.getElementById('formRecebidoMethod').value = 'POST';
+    document.getElementById('formRecebido').reset();
+    document.getElementById('rec_status').value = 'PENDENTE';
+  }
+
+  function editarRecebido(item) {
+    if (!item.id) {
+      alert('Erro: ID do registro não encontrado.');
+      return;
+    }
+
+    document.getElementById('modalRecebidoTitulo').innerText = 'Editar Processo Recebido: ' + (item.numero_processo_sei || '');
+    document.getElementById('formRecebido').action = '/recebidos/' + item.id;
+    document.getElementById('formRecebidoMethod').value = 'POST'; // Força POST para bater direto na rota sem falhas do method-override
+
+    document.getElementById('rec_numero_processo_sei').value = item.numero_processo_sei || '';
+    document.getElementById('rec_data_recebimento').value = item.data_recebimento || '';
+    document.getElementById('rec_tipo').value = item.tipo || '';
+    document.getElementById('rec_remetente').value = item.remetente || '';
+    document.getElementById('rec_assunto').value = item.assunto || '';
+    document.getElementById('rec_oficina').value = item.oficina || '';
+    document.getElementById('rec_status').value = (item.status || 'PENDENTE').toUpperCase();
+    document.getElementById('rec_acao').value = item.acao || '';
+    document.getElementById('rec_data').value = item.data || '';
+    document.getElementById('rec_ultimo_documento_recebido').value = item.ultimo_documento_recebido || '';
+    document.getElementById('rec_observacoes').value = item.observacoes || '';
+
+    new bootstrap.Modal(document.getElementById('modalNovoRecebido')).show();
+  }
+</script>
+
+<%- include('partials/footer') %>

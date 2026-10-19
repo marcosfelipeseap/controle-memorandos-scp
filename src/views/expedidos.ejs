@@ -1,0 +1,469 @@
+<%- include('partials/header') %>
+
+<!-- Cabeçalho da Página -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-box-arrow-up-right text-primary me-2"></i>Processos - Expedidos</h2>
+    <p class="text-muted mb-0">Gerenciamento e controle de memorandos e documentos expedidos.</p>
+  </div>
+  <div>
+    <button class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNovo" onclick="prepararNovoExpedido()">
+      <i class="bi bi-plus-lg me-1"></i> Novo Processo Expedido
+    </button>
+  </div>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card bg-white p-3 border-start border-primary border-4">
+      <span class="text-muted small text-uppercase fw-bold">Total de Processos Expedidos</span>
+      <h3 class="fw-bold mt-1 mb-0 text-dark"><%= resumo.total %></h3>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bg-white p-3 border-start border-warning border-4">
+      <span class="text-muted small text-uppercase fw-bold">Status: ABERTO</span>
+      <h3 class="fw-bold mt-1 mb-0 text-warning"><%= resumo.abertos %></h3>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bg-white p-3 border-start border-success border-4">
+      <span class="text-muted small text-uppercase fw-bold">Status: CONCLUÍDO</span>
+      <h3 class="fw-bold mt-1 mb-0 text-success"><%= resumo.concluidos %></h3>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros Instantâneos e Ordenação -->
+<div class="card p-3 mb-4">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label small fw-bold">Pesquisa Geral Instantânea</label>
+      <div class="input-group">
+        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+        <input type="text" id="filtroBusca" class="form-control" placeholder="Processo SEI, Documento, Assunto..." oninput="dispararFiltroExpedidos()">
+      </div>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-bold">Status</label>
+      <select id="filtroStatus" class="form-select" onchange="dispararFiltroExpedidos()">
+        <option value="">TODOS OS STATUS</option>
+        <option value="ABERTO">ABERTO</option>
+        <option value="CONCLUÍDO">CONCLUÍDO</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-bold">Oficina</label>
+      <input type="text" id="filtroOficina" class="form-control" placeholder="Filtrar oficina..." oninput="dispararFiltroExpedidos()">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-bold">Ordenar por</label>
+      <select id="filtroOrdenacao" class="form-select" onchange="dispararFiltroExpedidos()">
+        <option value="recente">Mais recente (Data)</option>
+        <option value="antigo">Mais antigo (Data)</option>
+        <option value="sei_asc">Nº Processo SEI (Crescente)</option>
+        <option value="sei_desc">Nº Processo SEI (Decrescente)</option>
+      </select>
+    </div>
+    <div class="col-md-1 d-grid">
+      <button type="button" class="btn btn-outline-secondary" onclick="limparFiltrosExpedidos()" title="Limpar Filtros">
+        <i class="bi bi-arrow-counterclockwise"></i> Limpar
+      </button>
+    </div>
+  </div>
+  <div class="mt-2 small text-muted">
+    Exibindo <strong id="contadorVisiveis"><%= memorandos.length %></strong> de <strong><%= memorandos.length %></strong> processos expedidos.
+  </div>
+</div>
+
+<!-- Tabela de Dados -->
+<div class="card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-custom mb-0">
+      <colgroup>
+        <col style="width: 16%;">
+        <col style="width: 12%;">
+        <col style="width: 18%;">
+        <col style="width: 30%;">
+        <col style="width: 9%;">
+        <col style="width: 8%;">
+        <col style="width: 7%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Processo SEI e Datas</th>
+          <th>Tipo e Documento</th>
+          <th>Remetente e Destinatário</th>
+          <th>Assunto</th>
+          <th class="text-center">Oficina</th>
+          <th class="text-center">Status</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="corpoTabelaExpedidos">
+        <% if (memorandos.length === 0) { %>
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+              Nenhum processo expedido cadastrado.
+            </td>
+          </tr>
+        <% } else { %>
+          <% memorandos.forEach(item => { %>
+            <tr class="linha-registro" 
+                data-sei="<%= item.numero_processo_sei || '' %>"
+                data-data="<%= item.expedido_em || '' %>"
+                data-status="<%= (item.status || '').toUpperCase() %>" 
+                data-oficina="<%= (item.oficina || '').toUpperCase() %>">
+              <td>
+                <span class="sei-badge"><%= item.numero_processo_sei %></span>
+                <div class="info-bloco">
+                  <div class="info-linha">
+                    <i class="bi bi-calendar-event text-primary me-1"></i>Expedido em: 
+                    <strong><%= item.expedido_em ? new Date(item.expedido_em + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado' %></strong>
+                  </div>
+                  <div class="info-linha">
+                    <i class="bi bi-send-check text-secondary me-1"></i>Despachado em: 
+                    <strong><%= item.despachado_em ? new Date(item.despachado_em + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado' %></strong>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="fw-bold text-dark mb-1"><%= item.tipo || 'Não informado' %></div>
+                <div class="info-linha">
+                  Número do Documento: <strong><%= item.numero_doc || '-' %></strong>
+                </div>
+              </td>
+              <td>
+                <div class="info-bloco">
+                  <div class="info-linha">
+                    <span class="text-muted">Remetente:</span><br>
+                    <strong><%= item.remetente || 'Não informado' %></strong>
+                  </div>
+                  <div class="info-linha mt-1">
+                    <span class="text-muted">Destinatário:</span><br>
+                    <strong><%= item.destinatario || 'Não informado' %></strong>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="texto-completo">
+                  <%= item.assunto || 'Sem assunto cadastrado' %>
+                </div>
+              </td>
+              <td class="text-center">
+                <% if (item.oficina) { %>
+                  <span class="oficina-badge"><%= item.oficina %></span>
+                <% } else { %>
+                  <span class="text-muted small">Não informada</span>
+                <% } %>
+              </td>
+              <td class="text-center">
+                <span class="badge badge-status <%= item.status === 'CONCLUÍDO' ? 'bg-success' : 'bg-warning text-dark' %>">
+                  <%= item.status %>
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-light border text-secondary" onclick="verDetalhesExpedido(<%= JSON.stringify(item) %>)" title="Visualizar Ficha Completa">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="editarExpedido(<%= JSON.stringify(item) %>)" title="Editar Processo">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <form action="/expedidos/<%= item.id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este processo expedido?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir Processo"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <tr id="linhaSemResultados" class="d-none">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-2 d-block mb-2"></i>
+              Nenhum processo expedido corresponde aos filtros digitados.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Visualizar Detalhes -->
+<div class="modal fade" id="modalDetalhes" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold"><i class="bi bi-file-text text-primary me-2"></i>Ficha Completa do Processo Expedido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-3">
+        <div class="col-md-6">
+          <div class="detalhe-label">Número do Processo SEI</div>
+          <div class="detalhe-valor fw-bold text-primary" id="det_sei"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Status</div>
+          <div class="detalhe-valor fw-bold" id="det_status"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Expedido em</div>
+          <div class="detalhe-valor" id="det_expedido_em"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Tipo de Documento</div>
+          <div class="detalhe-valor" id="det_tipo"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="detalhe-label">Número do Documento</div>
+          <div class="detalhe-valor" id="det_numero_doc"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Remetente</div>
+          <div class="detalhe-valor" id="det_remetente"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Destinatário</div>
+          <div class="detalhe-valor" id="det_destinatario"></div>
+        </div>
+        <div class="col-md-12">
+          <div class="detalhe-label">Assunto</div>
+          <div class="detalhe-valor" id="det_assunto"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Oficina</div>
+          <div class="detalhe-valor" id="det_oficina"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Despachado em</div>
+          <div class="detalhe-valor" id="det_despachado_em"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cadastro / Edição -->
+<div class="modal fade" id="modalNovo" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="formExpedido" action="/expedidos" method="POST">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="modalTitulo">Cadastrar Novo Processo Expedido</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-3">
+          <input type="hidden" name="_method" id="formMethod" value="POST">
+          
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Número do Processo SEI *</label>
+            <input type="text" class="form-control" name="numero_processo_sei" id="numero_processo_sei" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Expedido em</label>
+            <input type="date" class="form-control" name="expedido_em" id="expedido_em">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Tipo de Documento</label>
+            <input type="text" class="form-control" name="tipo" id="tipo" placeholder="Ex: MEMORANDO, OFÍCIO...">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Número do Documento</label>
+            <input type="text" class="form-control" name="numero_doc" id="numero_doc">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Remetente</label>
+            <input type="text" class="form-control" name="remetente" id="remetente">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Destinatário</label>
+            <input type="text" class="form-control" name="destinatario" id="destinatario">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label fw-bold">Assunto</label>
+            <textarea class="form-control" name="assunto" id="assunto" rows="3"></textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Oficina</label>
+            <input type="text" class="form-control" name="oficina" id="oficina">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Despachado em</label>
+            <input type="date" class="form-control" name="despachado_em" id="despachado_em">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Status</label>
+            <select class="form-select" name="status" id="status">
+              <option value="ABERTO">ABERTO</option>
+              <option value="CONCLUÍDO">CONCLUÍDO</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Processo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function normalizarTexto(str) {
+    return (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function normalizarCodigo(str) {
+    return normalizarTexto(str).replace(/[^a-z0-9]/g, '');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#corpoTabelaExpedidos .linha-registro').forEach(linha => {
+      const sei = linha.getAttribute('data-sei') || '';
+      const textoCompleto = normalizarTexto(linha.innerText);
+      const codigoCompleto = normalizarCodigo(sei + ' ' + linha.innerText);
+      linha.setAttribute('search-text', textoCompleto);
+      linha.setAttribute('search-code', codigoCompleto);
+    });
+    filtrarTabelaExpedidos();
+  });
+
+  let timeoutFiltro;
+  function dispararFiltroExpedidos() {
+    clearTimeout(timeoutFiltro);
+    timeoutFiltro = setTimeout(filtrarTabelaExpedidos, 100);
+  }
+
+  function filtrarTabelaExpedidos() {
+    const termoBusca = document.getElementById('filtroBusca').value.trim();
+    const statusFiltro = document.getElementById('filtroStatus').value;
+    const oficinaFiltro = normalizarTexto(document.getElementById('filtroOficina').value.trim());
+    const ordenacao = document.getElementById('filtroOrdenacao').value;
+
+    const termoTexto = normalizarTexto(termoBusca);
+    const termoCodigo = normalizarCodigo(termoBusca);
+
+    const tbody = document.getElementById('corpoTabelaExpedidos');
+    const linhas = Array.from(tbody.querySelectorAll('.linha-registro'));
+    let visiveis = 0;
+
+    linhas.forEach(linha => {
+      const searchTxt = linha.getAttribute('search-text') || '';
+      const searchCod = linha.getAttribute('search-code') || '';
+      const statusLinha = linha.getAttribute('data-status') || '';
+      const oficinaLinha = normalizarTexto(linha.getAttribute('data-oficina') || '');
+
+      const bateBusca = !termoBusca || 
+                        searchTxt.includes(termoTexto) || 
+                        (termoCodigo.length > 0 && searchCod.includes(termoCodigo));
+
+      const bateStatus = !statusFiltro || statusLinha === statusFiltro;
+      const bateOficina = !oficinaFiltro || oficinaLinha.includes(oficinaFiltro);
+
+      if (bateBusca && bateStatus && bateOficina) {
+        linha.style.display = '';
+        visiveis++;
+      } else {
+        linha.style.display = 'none';
+      }
+    });
+
+    linhas.sort((a, b) => {
+      const dataA = a.getAttribute('data-data') || '';
+      const dataB = b.getAttribute('data-data') || '';
+      const seiA = a.getAttribute('data-sei') || '';
+      const seiB = b.getAttribute('data-sei') || '';
+
+      const temDataA = dataA.trim() !== '';
+      const temDataB = dataB.trim() !== '';
+
+      if (ordenacao === 'recente') {
+        if (!temDataA && temDataB) return 1;
+        if (temDataA && !temDataB) return -1;
+        return dataB.localeCompare(dataA);
+      } else if (ordenacao === 'antigo') {
+        if (!temDataA && temDataB) return 1;
+        if (temDataA && !temDataB) return -1;
+        return dataA.localeCompare(dataB);
+      } else if (ordenacao === 'sei_asc') {
+        return seiA.localeCompare(seiB, 'pt', { numeric: true });
+      } else if (ordenacao === 'sei_desc') {
+        return seiB.localeCompare(seiA, 'pt', { numeric: true });
+      }
+      return 0;
+    });
+
+    linhas.forEach(linha => tbody.appendChild(linha));
+
+    const contador = document.getElementById('contadorVisiveis');
+    if (contador) contador.innerText = visiveis;
+
+    const msgVazio = document.getElementById('linhaSemResultados');
+    if (msgVazio) {
+      msgVazio.classList.toggle('d-none', visiveis > 0);
+    }
+  }
+
+  function limparFiltrosExpedidos() {
+    document.getElementById('filtroBusca').value = '';
+    document.getElementById('filtroStatus').value = '';
+    document.getElementById('filtroOficina').value = '';
+    document.getElementById('filtroOrdenacao').value = 'recente';
+    filtrarTabelaExpedidos();
+  }
+
+  function formatarDataBR(d) {
+    return d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado';
+  }
+
+  function verDetalhesExpedido(item) {
+    document.getElementById('det_sei').innerText = item.numero_processo_sei || '-';
+    document.getElementById('det_status').innerText = item.status || '-';
+    document.getElementById('det_expedido_em').innerText = formatarDataBR(item.expedido_em);
+    document.getElementById('det_tipo').innerText = item.tipo || '-';
+    document.getElementById('det_numero_doc').innerText = item.numero_doc || '-';
+    document.getElementById('det_remetente').innerText = item.remetente || '-';
+    document.getElementById('det_destinatario').innerText = item.destinatario || '-';
+    document.getElementById('det_assunto').innerText = item.assunto || '-';
+    document.getElementById('det_oficina').innerText = item.oficina || '-';
+    document.getElementById('det_despachado_em').innerText = formatarDataBR(item.despachado_em);
+
+    new bootstrap.Modal(document.getElementById('modalDetalhes')).show();
+  }
+
+  function prepararNovoExpedido() {
+    document.getElementById('modalTitulo').innerText = 'Cadastrar Novo Processo Expedido';
+    document.getElementById('formExpedido').action = '/expedidos';
+    document.getElementById('formMethod').value = 'POST';
+    document.getElementById('formExpedido').reset();
+  }
+
+  function editarExpedido(item) {
+    if (!item.id) {
+      alert('Erro: ID do registro não encontrado.');
+      return;
+    }
+
+    document.getElementById('modalTitulo').innerText = 'Editar Processo Expedido: ' + (item.numero_processo_sei || '');
+    document.getElementById('formExpedido').action = '/expedidos/' + item.id;
+    document.getElementById('formMethod').value = 'POST'; // Força POST para bater direto na rota sem falhas do method-override
+
+    document.getElementById('numero_processo_sei').value = item.numero_processo_sei || '';
+    document.getElementById('expedido_em').value = item.expedido_em || '';
+    document.getElementById('tipo').value = item.tipo || '';
+    document.getElementById('numero_doc').value = item.numero_doc || '';
+    document.getElementById('remetente').value = item.remetente || '';
+    document.getElementById('destinatario').value = item.destinatario || '';
+    document.getElementById('assunto').value = item.assunto || '';
+    document.getElementById('oficina').value = item.oficina || '';
+    document.getElementById('despachado_em').value = item.despachado_em || '';
+    document.getElementById('status').value = item.status || 'ABERTO';
+
+    new bootstrap.Modal(document.getElementById('modalNovo')).show();
+  }
+</script>
+
+<%- include('partials/footer') %>
