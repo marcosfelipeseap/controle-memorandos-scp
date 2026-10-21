@@ -117,7 +117,13 @@
                 data-status="<%= (item.status || '').toUpperCase() %>" 
                 data-oficina="<%= (item.oficina || '').toUpperCase() %>">
               <td>
-                <span class="sei-badge"><%= item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '' %></span>
+                <% if (item.link) { %>
+                  <a href="<%= item.link %>" target="_blank" class="sei-badge text-decoration-none bg-primary text-white" title="Abrir processo em nova guia">
+                    <%= item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '' %> <i class="bi bi-box-arrow-up-right ms-1"></i>
+                  </a>
+                <% } else { %>
+                  <span class="sei-badge"><%= item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '' %></span>
+                <% } %>
                 <div class="info-bloco">
                   <div class="info-linha">
                     <i class="bi bi-calendar-event text-primary me-1"></i>Expedido em: 
@@ -238,9 +244,13 @@
           <div class="detalhe-label">Despachado em</div>
           <div class="detalhe-valor" id="det_despachado_em"></div>
         </div>
+        <div class="col-md-6">
+          <div class="detalhe-label">Link de Acesso</div>
+          <div class="detalhe-valor" id="det_link"></div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
       </div>
     </div>
   </div>
@@ -261,6 +271,10 @@
           <div class="col-md-6">
             <label class="form-label fw-bold">Número do Processo SEI *</label>
             <input type="text" class="form-control" name="numero_processo_sei" id="numero_processo_sei" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Link do Processo</label>
+            <input type="url" class="form-control" name="link" id="link" placeholder="https://sei.ma.gov.br/...">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-bold">Expedido em</label>
@@ -430,6 +444,7 @@
     document.getElementById('det_assunto').innerText = item.assunto || '-';
     document.getElementById('det_oficina').innerText = item.oficina || '-';
     document.getElementById('det_despachado_em').innerText = formatarDataBR(item.despachado_em);
+    document.getElementById('det_link').innerHTML = item.link ? `<a href="${item.link}" target="_blank">Acessar Processo <i class="bi bi-link-45deg"></i></a>` : 'Sem link';
 
     new bootstrap.Modal(document.getElementById('modalDetalhes')).show();
   }
@@ -452,6 +467,7 @@
     document.getElementById('formMethod').value = 'POST';
 
     document.getElementById('numero_processo_sei').value = item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '';
+    document.getElementById('link').value = item.link || '';
     document.getElementById('expedido_em').value = item.expedido_em || '';
     document.getElementById('tipo').value = item.tipo || '';
     document.getElementById('numero_doc').value = item.numero_doc ? item.numero_doc.replace(/\./g, '') : '';

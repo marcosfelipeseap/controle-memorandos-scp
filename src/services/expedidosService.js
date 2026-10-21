@@ -60,6 +60,7 @@ const expedidosService = {
   async criar(dados) {
     const payload = {
       numero_processo_sei: dados.numero_processo_sei?.trim(),
+      link: dados.link?.trim() || null,
       expedido_em: dados.expedido_em || null,
       tipo: dados.tipo?.trim() || null,
       numero_doc: dados.numero_doc?.trim() || null,
@@ -90,6 +91,7 @@ const expedidosService = {
   async atualizar(id, dados) {
     const payload = {
       numero_processo_sei: dados.numero_processo_sei?.trim(),
+      link: dados.link?.trim() || null,
       expedido_em: dados.expedido_em || null,
       tipo: dados.tipo?.trim() || null,
       numero_doc: dados.numero_doc?.trim() || null,

@@ -91,6 +91,7 @@ const recebidosService = {
   async criar(dados) {
     const payload = {
       numero_processo_sei: dados.numero_processo_sei?.trim(),
+      link: dados.link?.trim() || null,
       data_recebimento: dados.data_recebimento || null,
       tipo: dados.tipo?.trim() || null,
       remetente: dados.remetente?.trim() || null,
@@ -122,6 +123,7 @@ const recebidosService = {
   async atualizar(id, dados) {
     const payload = {
       numero_processo_sei: dados.numero_processo_sei?.trim(),
+      link: dados.link?.trim() || null,
       data_recebimento: dados.data_recebimento || null,
       tipo: dados.tipo?.trim() || null,
       remetente: dados.remetente?.trim() || null,
