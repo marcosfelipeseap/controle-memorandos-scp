@@ -24,16 +24,16 @@ const authController = {
   async processarCadastro(req, res) {
     try {
       await authService.cadastrar(req.body);
-      res.redirect('/login?sucesso=' + encodeURIComponent('Cadastro realizado com sucesso! Aguarde a aprovação de um Administrador para acessar.'));
+      res.redirect('/login?sucesso=' + encodeURIComponent('Cadastro realizado com sucesso! Aguarde a aprovação de um Administrador para aceder.'));
     } catch (error) {
       res.redirect('/cadastro?erro=' + encodeURIComponent(error.message));
     }
   },
 
   logout(req, res) {
-    req.session.destroy(() => {
-      res.redirect('/login');
-    });
+    // Para o cookie-session, a sessão é destruída definindo-a como nula
+    req.session = null;
+    res.redirect('/login');
   },
 
   async gerenciarUsuarios(req, res) {
@@ -56,7 +56,7 @@ const authController = {
       const { id } = req.params;
       const { is_approved } = req.body;
       await authService.alterarStatusAprovacao(id, is_approved === 'true');
-      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Status do usuário atualizado!'));
+      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Status do utilizador atualizado!'));
     } catch (error) {
       res.redirect('/admin/usuarios?erro=' + encodeURIComponent(error.message));
     }
@@ -67,7 +67,7 @@ const authController = {
       const { id } = req.params;
       const { role } = req.body;
       await authService.alterarRole(id, role);
-      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Cargo do usuário alterado com sucesso!'));
+      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Cargo do utilizador alterado com sucesso!'));
     } catch (error) {
       res.redirect('/admin/usuarios?erro=' + encodeURIComponent(error.message));
     }
@@ -77,7 +77,7 @@ const authController = {
     try {
       const { id } = req.params;
       await authService.excluir(id);
-      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Usuário excluído com sucesso!'));
+      res.redirect('/admin/usuarios?sucesso=' + encodeURIComponent('Utilizador excluído com sucesso!'));
     } catch (error) {
       res.redirect('/admin/usuarios?erro=' + encodeURIComponent(error.message));
     }

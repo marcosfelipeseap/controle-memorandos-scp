@@ -2,8 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const methodOverride = require('method-override');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+const cookieSession = require('cookie-session');
 const memorandoRoutes = require('./src/routes/memorandoRoutes');
 const authController = require('./src/controllers/authController');
 const authMiddleware = require('./src/middlewares/authMiddleware');
@@ -21,22 +20,22 @@ app.use(express.json({ limit: '10mb' }));
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuração de Sessão Persistente (Salva em arquivo, não cai se o servidor reiniciar)
-app.use(session({
-  store: new FileStore({
-    path: './sessions', // Cria uma pasta 'sessions' na raiz do projeto para guardar os logins
-    logFn: function(){} // Oculta logs desnecessários no terminal
-  }),
+// Configuração de Sessão (Ideal para ambientes Serverless como o Vercel)
+app.use(cookieSession({
+  name: 'sessao_memorandos',
   secret: 'chave_secreta_memorandos_scp',
-  resave: true,
-  rolling: true,
-  saveUninitialized: false,
-  cookie: { 
-    maxAge: 1000 * 60 * 60 * 12 // 12 horas exatas
-  }
+  maxAge: 1000 * 60 * 60 * 12 // 12 horas
 }));
 
-// Disponibiliza o usuário logado para todas as views EJS
+// Middleware para forçar a renovação do cookie a cada requisição ativa do utilizador
+app.use((req, res, next) => {
+  if (req.session && req.session.usuario) {
+    req.session.ultimaAcao = Date.now(); 
+  }
+  next();
+});
+
+// Disponibiliza o utilizador logado para todas as views EJS
 app.use((req, res, next) => {
   res.locals.usuarioLogado = req.session.usuario || null;
   next();
@@ -69,5 +68,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor a correr em http://localhost:${PORT}`);
 });
