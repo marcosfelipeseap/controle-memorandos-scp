@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const methodOverride = require('method-override');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const memorandoRoutes = require('./src/routes/memorandoRoutes');
 const authController = require('./src/controllers/authController');
 const authMiddleware = require('./src/middlewares/authMiddleware');
@@ -20,14 +21,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuração de Sessão (Duração exata de 12 horas)
+// Configuração de Sessão Persistente (Salva em arquivo, não cai se o servidor reiniciar)
 app.use(session({
+  store: new FileStore({
+    path: './sessions', // Cria uma pasta 'sessions' na raiz do projeto para guardar os logins
+    logFn: function(){} // Oculta logs desnecessários no terminal
+  }),
   secret: 'chave_secreta_memorandos_scp',
   resave: true,
   rolling: true,
   saveUninitialized: false,
   cookie: { 
-    maxAge: 1000 * 60 * 60 * 12 // 12 horas
+    maxAge: 1000 * 60 * 60 * 12 // 12 horas exatas
   }
 }));
 
