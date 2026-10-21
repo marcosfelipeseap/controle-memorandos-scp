@@ -23,7 +23,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configuração de Sessão (Duração exata de 12 horas)
 app.use(session({
   secret: 'chave_secreta_memorandos_scp',
-  resave: false,
+  resave: true,
+  rolling: true,
   saveUninitialized: false,
   cookie: { 
     maxAge: 1000 * 60 * 60 * 12 // 12 horas

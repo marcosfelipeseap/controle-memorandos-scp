@@ -117,7 +117,7 @@
                 data-status="<%= (item.status || '').toUpperCase() %>" 
                 data-oficina="<%= (item.oficina || '').toUpperCase() %>">
               <td>
-                <span class="sei-badge"><%= item.numero_processo_sei %></span>
+                <span class="sei-badge"><%= item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '' %></span>
                 <div class="info-bloco">
                   <div class="info-linha">
                     <i class="bi bi-calendar-event text-primary me-1"></i>Expedido em: 
@@ -132,7 +132,7 @@
               <td>
                 <div class="fw-bold text-dark mb-1"><%= item.tipo || 'Não informado' %></div>
                 <div class="info-linha">
-                  Número do Documento: <strong><%= item.numero_doc || '-' %></strong>
+                  Número do Documento: <strong><%= item.numero_doc ? item.numero_doc.replace(/\./g, '') : '-' %></strong>
                 </div>
               </td>
               <td>
@@ -240,7 +240,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn secondary" data-bs-dismiss="modal">Fechar</button>
       </div>
     </div>
   </div>
@@ -420,11 +420,11 @@
   }
 
   function verDetalhesExpedido(item) {
-    document.getElementById('det_sei').innerText = item.numero_processo_sei || '-';
+    document.getElementById('det_sei').innerText = item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '-';
     document.getElementById('det_status').innerText = item.status || '-';
     document.getElementById('det_expedido_em').innerText = formatarDataBR(item.expedido_em);
     document.getElementById('det_tipo').innerText = item.tipo || '-';
-    document.getElementById('det_numero_doc').innerText = item.numero_doc || '-';
+    document.getElementById('det_numero_doc').innerText = item.numero_doc ? item.numero_doc.replace(/\./g, '') : '-';
     document.getElementById('det_remetente').innerText = item.remetente || '-';
     document.getElementById('det_destinatario').innerText = item.destinatario || '-';
     document.getElementById('det_assunto').innerText = item.assunto || '-';
@@ -447,14 +447,14 @@
       return;
     }
 
-    document.getElementById('modalTitulo').innerText = 'Editar Processo Expedido: ' + (item.numero_processo_sei || '');
+    document.getElementById('modalTitulo').innerText = 'Editar Processo Expedido: ' + (item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '');
     document.getElementById('formExpedido').action = '/expedidos/' + item.id;
-    document.getElementById('formMethod').value = 'POST'; // Força POST para bater direto na rota sem falhas do method-override
+    document.getElementById('formMethod').value = 'POST';
 
-    document.getElementById('numero_processo_sei').value = item.numero_processo_sei || '';
+    document.getElementById('numero_processo_sei').value = item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '';
     document.getElementById('expedido_em').value = item.expedido_em || '';
     document.getElementById('tipo').value = item.tipo || '';
-    document.getElementById('numero_doc').value = item.numero_doc || '';
+    document.getElementById('numero_doc').value = item.numero_doc ? item.numero_doc.replace(/\./g, '') : '';
     document.getElementById('remetente').value = item.remetente || '';
     document.getElementById('destinatario').value = item.destinatario || '';
     document.getElementById('assunto').value = item.assunto || '';

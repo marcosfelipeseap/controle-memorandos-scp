@@ -168,7 +168,7 @@
                 data-status="<%= stUpper %>"
                 data-oficina="<%= (item.oficina || '').toUpperCase() %>">
               <td>
-                <span class="sei-badge"><%= item.numero_processo_sei %></span>
+                <span class="sei-badge"><%= item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '' %></span>
                 <div class="info-linha">
                   <i class="bi bi-calendar-check text-primary me-1"></i>Recebido em:<br>
                   <strong><%= item.data_recebimento ? new Date(item.data_recebimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado' %></strong>
@@ -527,7 +527,7 @@
   }
 
   function verDetalhesRecebido(item) {
-    document.getElementById('det_rec_sei').innerText = item.numero_processo_sei || '-';
+    document.getElementById('det_rec_sei').innerText = item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '-';
     document.getElementById('det_rec_oficina').innerText = item.oficina || '-';
     document.getElementById('det_rec_status').innerText = (item.status || 'PENDENTE').toUpperCase();
     document.getElementById('det_rec_data_rec').innerText = formatarDataBR(item.data_recebimento);
@@ -556,11 +556,11 @@
       return;
     }
 
-    document.getElementById('modalRecebidoTitulo').innerText = 'Editar Processo Recebido: ' + (item.numero_processo_sei || '');
+    document.getElementById('modalRecebidoTitulo').innerText = 'Editar Processo Recebido: ' + (item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '');
     document.getElementById('formRecebido').action = '/recebidos/' + item.id;
-    document.getElementById('formRecebidoMethod').value = 'POST'; // Força POST para bater direto na rota sem falhas do method-override
+    document.getElementById('formRecebidoMethod').value = 'POST';
 
-    document.getElementById('rec_numero_processo_sei').value = item.numero_processo_sei || '';
+    document.getElementById('rec_numero_processo_sei').value = item.numero_processo_sei ? item.numero_processo_sei.replace(/\./g, '') : '';
     document.getElementById('rec_data_recebimento').value = item.data_recebimento || '';
     document.getElementById('rec_tipo').value = item.tipo || '';
     document.getElementById('rec_remetente').value = item.remetente || '';
